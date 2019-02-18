@@ -1,3 +1,5 @@
 virtualenv/
 .env
 chromedriver
+__pycache__/
+.vscode/

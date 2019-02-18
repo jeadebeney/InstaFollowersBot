@@ -1,6 +1,8 @@
 # Environment variables
 from dotenv import load_dotenv
 load_dotenv()
+# Config
+import config
 # Defaults
 import os
 import time
@@ -29,7 +31,7 @@ webdriver.find_element_by_xpath(
 time.sleep(5)
 
 # Creating a hashtag list to scratch instagram
-hashtag_list = ['thailand', 'travel', 'Kinabalu', 'china']
+hashtag_list = config.hashtags
 
 # - if it's the first time you run it, use this line and comment the two below
 prev_user_list = []
@@ -37,7 +39,7 @@ prev_user_list = []
 # prev_user_list = list(prev_user_list['0'])
 
 new_followed = []
-tag = -1
+tag = -1 # TODO: why -1...?
 followed = 0
 likes = 0
 comments = 0
@@ -45,7 +47,7 @@ comments = 0
 for hashtag in hashtag_list:
     tag = tag+1
     webdriver.get('https://www.instagram.com/explore/tags/' +
-                  hashtag_list[tag] + '/')
+                  hashtag_list[tag] + '/') #TODO: why...?
     time.sleep(5)
     first_thumbnail = webdriver.find_element_by_xpath(
         '//*[@id="react-root"]/section/main/article/div[1]/div/div/div[1]/div[1]/a/div')
@@ -110,6 +112,7 @@ for hashtag in hashtag_list:
     except:
         continue
 
+# TODO: Comment
 for n in range(0, len(new_followed)):
     prev_user_list.append(new_followed[n])
 
@@ -121,15 +124,26 @@ print('Commented {} photos.'.format(comments))
 print('Followed {} new people.'.format(followed))
 
 
-def unfollowWithUsername(self, username):
+# TODO: snake case in python
+def unfollow_with_username(self, username):
     self.browser.get('https://www.instagram.com/' + username + '/')
     time.sleep(2)
-    followButton = self.browser.find_element_by_css_selector('button')
-    if (followButton.text == 'Following'):
-        followButton.click()
+    follow_btn = self.browser.find_element_by_css_selector('button')
+    if (follow_btn.text == 'Following'):
+        follow_btn.click()
         time.sleep(2)
         confirmButton = self.browser.find_element_by_xpath(
             '//button[text() = "Unfollow"]')
         confirmButton.click()
     else:
         print("You are not following this user")
+
+
+# Wait approximatively the requested amount of time
+def random_sleep(seconds):
+    time.sleep(seconds + random.randint(10, 1000) / 1000)
+
+
+# Return a random comment from config file
+def random_comment():
+    return random.choice(config.comments)
