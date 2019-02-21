@@ -17,6 +17,19 @@ chrome_options = Options()
 chrome_options.add_argument("--disable-infobars")
 chrome_options.add_argument("disable-infobars")
 
+
+# Return a random comment from config file
+def random_comment():
+    com_1 = random.choice(config.comments_1)
+    com_2 = random.choice(config.comments_2)
+    com_3 = random.choice(config.comments_3)
+    com_4 = random.choice(config.comments_4)
+    final_com = com_1 + " " + com_2 + " " + com_3 + " " + com_4
+    print(final_com)
+    return final_com
+
+
+
 # SCRIPT
 webdriver = webdriver.Chrome(executable_path=os.getenv(
     "CHROME_DRIVER_PATH"), options=chrome_options)
@@ -38,79 +51,68 @@ prev_user_list = []
 # prev_user_list = pd.read_csv('20181203-224633_users_followed_list.csv', delimiter=',').iloc[:,1:2] # useful to build a user log
 # prev_user_list = list(prev_user_list['0'])
 
-new_followed = []
-tag = -1 # TODO: why -1...?
-followed = 0
-likes = 0
-comments = 0
+while(1):
+    new_followed = []
+    tag = -1 # TODO: why -1...?
+    followed = 0
+    likes = 0
+    comments = 0
 
-for hashtag in hashtag_list:
-    tag = tag+1
-    webdriver.get('https://www.instagram.com/explore/tags/' +
-                  hashtag_list[tag] + '/') #TODO: why...?
-    time.sleep(5)
-    first_thumbnail = webdriver.find_element_by_xpath(
-        '//*[@id="react-root"]/section/main/article/div[1]/div/div/div[1]/div[1]/a/div')
+    for hashtag in hashtag_list:
+        tag = tag+1
+        webdriver.get('https://www.instagram.com/explore/tags/' +
+                    hashtag_list[tag] + '/') #TODO: why...?
+        time.sleep(5)
+        first_thumbnail = webdriver.find_element_by_xpath(
+            '//*[@id="react-root"]/section/main/article/div[1]/div/div/div[1]/div[1]/a/div')
 
-    first_thumbnail.click()
-    time.sleep(random.randint(1, 3))
-    try:
-        for x in range(1, 200):
-            username = webdriver.find_element_by_xpath(
-                '/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
-            print(username)
-            if username not in prev_user_list:
-                if webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').text == 'Follow':
+        first_thumbnail.click()
+        time.sleep(random.randint(1, 3))
+        try:
+            for x in range(1, 200):
+                username = webdriver.find_element_by_xpath(
+                    '/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
+                print("The username is {}".format(username))
 
-                    new_followed.append(username)
-                    followed += 1
+                if username not in prev_user_list:
+                    if webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').text == 'Follow':
+                        if random.randint(1,100) == 53:
+                            webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').click()
+                            new_followed.append(username)
+                            followed += 1
 
-                    # Liking the picture
-                    button_like = webdriver.find_element_by_xpath(
-                        '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[1]/button/span')
-                    button_like.click()
-                    likes += 1
+                        # Liking the picture
+                        button_like = webdriver.find_element_by_xpath(
+                            '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[1]/button/span')
+                        button_like.click()
+                        likes += 1
 
-                    time.sleep(random.randint(18, 25))
+                        time.sleep(random.randint(18, 25))
 
-                    # Comments and tracker
-                    comm_prob = random.randint(1, 10)
-                    print('{}_{}: {}'.format(hashtag, x, comm_prob))
-                    if comm_prob > 7:
+                        # Comments and tracker
+                        print('{}_{}'.format(hashtag, x))
                         comments += 1
                         webdriver.find_element_by_xpath(
                             '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
                         comment_box = webdriver.find_element_by_xpath(
                             '/html/body/div[2]/div[2]/div/article/div[2]/section[3]/div/form/textarea')
 
-                        if (comm_prob < 7):
-                            rand_numb = random.randint(1, 100)
-                            rand_numb = str(rand_numb)
-                            rand_comment = 'This pic is reallyy cool !' + rand_numb
-                            comment_box.send_keys(rand_comment)
-                            time.sleep(1)
-                        elif(comm_prob > 6) and (comm_prob < 9):
-                            rand_numb = random.randint(1, 100)
-                            rand_numb = str(rand_numb)
-                            rand_comment = 'Nice pic, i like it :)' + rand_numb
-                            comment_box.send_keys(rand_comment)
-                            time.sleep(1)
-                        elif comm_prob == 9:
-                            comment_box.send_keys('Sooo cool :-)')
-                            time.sleep(1)
+                        rand_comment = random_comment()
+                        comment_box.send_keys(rand_comment)
+                        time.sleep(1)
                         # Enter to post comment
                         comment_box.send_keys(Keys.ENTER)
                         time.sleep(random.randint(22, 28))
 
-                # Next picture
-                webdriver.find_element_by_link_text('Next').click()
-                time.sleep(random.randint(25, 29))
-            else:
-                webdriver.find_element_by_link_text('Next').click()
-                time.sleep(random.randint(20, 26))
+                    # Next picture
+                    webdriver.find_element_by_link_text('Next').click()
+                    time.sleep(random.randint(25, 29))
+                else:
+                    webdriver.find_element_by_link_text('Next').click()
+                    time.sleep(random.randint(20, 26))
 
-    except:
-        continue
+        except:
+            continue
 
 # TODO: Comment
 for n in range(0, len(new_followed)):
@@ -144,6 +146,4 @@ def random_sleep(seconds):
     time.sleep(seconds + random.randint(10, 1000) / 1000)
 
 
-# Return a random comment from config file
-def random_comment():
-    return random.choice(config.comments)
+
