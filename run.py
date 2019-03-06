@@ -20,11 +20,11 @@ chrome_options.add_argument("disable-infobars")
 
 # Return a random comment from config file
 def random_comment():
-    com_1 = random.choice(config.comments_1)
-    com_2 = random.choice(config.comments_2)
-    com_3 = random.choice(config.comments_3)
-    com_4 = random.choice(config.comments_4)
-    final_com = com_1 + " " + com_2 + " " + com_3 + " " + com_4
+    com_1 = random.choice(config.comments_adjectif)
+    com_2 = random.choice(config.comments_photo)
+    com_3 = random.choice(config.comments_smiley)
+    com_4 = random.choice(config.comments_ponctuation)
+    final_com = com_1 + " " + com_2 + " " + com_3+ com_4
     print(final_com)
     return final_com
 
