@@ -17,7 +17,6 @@ chrome_options = Options()
 chrome_options.add_argument("--disable-infobars")
 chrome_options.add_argument("disable-infobars")
 
-
 # Return a random comment from config file
 def random_comment():
     com_1 = random.choice(config.comments_adjectif)
@@ -28,9 +27,26 @@ def random_comment():
     print(final_com)
     return final_com
 
+# Create a webdriver instance
+
+def WebDriverInstance():
+    webdriver = webdriver.Chrome(executable_path=os.getenv("CHROME_DRIVER_PATH"), options=chrome_options))
+    webdriver.get('https://www.instagram.com/accounts/login/')
+    time.sleep(1)
+    webdriver = webdriver.Chrome(executable_path=os.getenv(
+    "CHROME_DRIVER_PATH"), options=chrome_options)
+    webdriver.get('https://www.instagram.com/accounts/login/')
+    time.sleep(1)
+    webdriver.find_element_by_name('username').send_keys(os.getenv("PYI_IG_EMAIL"))
+    webdriver.find_element_by_name('password').send_keys(
+        os.getenv("PYI_IG_PASSWORD"))
+    webdriver.find_element_by_xpath(
+        '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[3]/button').send_keys(Keys.ENTER)
+    return webdriver
+    time.sleep(5)
 
 
-# SCRIPT
+
 webdriver = webdriver.Chrome(executable_path=os.getenv(
     "CHROME_DRIVER_PATH"), options=chrome_options)
 webdriver.get('https://www.instagram.com/accounts/login/')
@@ -114,6 +130,10 @@ while(1):
         except:
             continue
 
+
+
+
+'''
 # TODO: Comment
 for n in range(0, len(new_followed)):
     prev_user_list.append(new_followed[n])
@@ -146,4 +166,4 @@ def random_sleep(seconds):
     time.sleep(seconds + random.randint(10, 1000) / 1000)
 
 
-
+'''
