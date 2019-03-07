@@ -36,12 +36,13 @@ def random_comment():
 def webdriverInstance():
     webdriver = wd.Chrome(executable_path=os.getenv(
     "CHROME_DRIVER_PATH"), options=chrome_options)
+    time.sleep(2)
     return webdriver
 
 
 def webdriverConnect(webdriver):
     webdriver.get('https://www.instagram.com/accounts/login/')
-    time.sleep(1)
+    time.sleep(3)
     webdriver.find_element_by_name('username').send_keys(os.getenv("PYI_IG_EMAIL"))
     webdriver.find_element_by_name('password').send_keys(
     os.getenv("PYI_IG_PASSWORD"))
@@ -83,6 +84,7 @@ def likePicture(webdriver, likes):
     button_like.click()
     likes += 1
     time.sleep(random.randint(11, 25))
+    return likes
 
 
 def commentPicture(webdriver, comments):
@@ -96,6 +98,8 @@ def commentPicture(webdriver, comments):
     comments += 1
     comment_box.send_keys(Keys.ENTER)
     time.sleep(random.randint(18, 28))
+    return comments
+
 
 def nextPicture(webdriver):
     webdriver.find_element_by_link_text('Next').click()
@@ -111,41 +115,48 @@ prev_user_list = []
 webdriver = webdriverInstance()
 webdriverConnect(webdriver)
 
-while(1):
+def commentLoop(webdriver, hashtag_list):
     new_followed = []
     tag = -1 
     followed = 0
     likes = 0
     comments = 0
-    for hashtag in hashtag_list:
-        tag = tag+1
-        getTag(webdriver, hashtag_list, tag)
-        clickPicture(webdriver)
-        try:
-            for x in range(1, 200):
-                username = getUsername(webdriver)
+    while(1):
+        for hashtag in hashtag_list:
+            tag = tag+1
+            getTag(webdriver, hashtag_list, tag)
+            clickPicture(webdriver)
+            try:
+                for x in range(1, 200):
+                    username = getUsername(webdriver)
 
-                if username not in prev_user_list:
-                    if webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').text == 'Follow':
-                        # We randomly follow users (odds: 1/100 so far)
-                        if random.randint(1,100) == 53:
-                            followUser(webdriver, username, new_followed, followed)
+                    if username not in prev_user_list:
+                        if webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').text == 'Follow':
+                            # We randomly follow users (odds: 1/100 so far)
 
-                        # Liking the picture
-                        likePicture(webdriver, likes)
+                            if random.randint(1,100) == 53:
+                                followUser(webdriver, username, new_followed, followed)
 
+                            # Liking the picture
+                            likes = likePicture(webdriver, likes)
 
-                        # Comments and tracker
-                        commentPicture(webdriver, comments)
-                        
-                    # Next picture
-                    nextPicture(webdriver)
-                else:
-                    nextPicture(webdriver)
-        except:
-            continue
+                            # Comments and tracker
+                            comments = commentPicture(webdriver, comments)
+                            
+                        if likes % 50 == 0:
+                            print("The number of likes is: {}.".format(likes))
+                        if comments % 50 == 0:
+                            print("The number of comments is: {}.".format(comments))
 
+                        # Next picture
+                        nextPicture(webdriver)
+                    else:
+                        nextPicture(webdriver)
 
+            except:
+                continue
+                    
+commentLoop(webdriver, hashtag_list)
 
 '''
 # To store list of users
