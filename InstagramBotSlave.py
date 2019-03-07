@@ -106,16 +106,9 @@ def nextPicture(webdriver):
     time.sleep(random.randint(25, 29))
 
 
-# Creating a hashtag list to scratch instagram
-hashtag_list = config.hashtags
-
-# - if it's the first time you run it, use this line and comment the two below
-prev_user_list = []
-
-webdriver = webdriverInstance()
-webdriverConnect(webdriver)
-
-def commentLoop(webdriver, hashtag_list):
+def commentLoop(hashtag_list):
+    webdriver = webdriverInstance()
+    webdriverConnect(webdriver)
     new_followed = []
     tag = -1 
     followed = 0
@@ -130,33 +123,30 @@ def commentLoop(webdriver, hashtag_list):
                 for x in range(1, 200):
                     username = getUsername(webdriver)
 
-                    if username not in prev_user_list:
-                        if webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').text == 'Follow':
-                            # We randomly follow users (odds: 1/100 so far)
+                    if webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').text == 'Follow':
+                        
+                        # We randomly follow users (odds: 1/100 so far)
+                        if random.randint(1,100) == 53:
+                            followUser(webdriver, username, new_followed, followed)
 
-                            if random.randint(1,100) == 53:
-                                followUser(webdriver, username, new_followed, followed)
+                        # Liking the picture
+                        likes = likePicture(webdriver, likes)
 
-                            # Liking the picture
-                            likes = likePicture(webdriver, likes)
+                        # Comments and tracker
+                        comments = commentPicture(webdriver, comments)
+                        
+                    if likes % 50 == 0:
+                        print("The number of likes is: {}.".format(likes))
+                    if comments % 50 == 0:
+                        print("The number of comments is: {}.".format(comments))
 
-                            # Comments and tracker
-                            comments = commentPicture(webdriver, comments)
-                            
-                        if likes % 50 == 0:
-                            print("The number of likes is: {}.".format(likes))
-                        if comments % 50 == 0:
-                            print("The number of comments is: {}.".format(comments))
+                    # Next picture
+                    nextPicture(webdriver)
 
-                        # Next picture
-                        nextPicture(webdriver)
-                    else:
-                        nextPicture(webdriver)
 
             except:
                 continue
                     
-commentLoop(webdriver, hashtag_list)
 
 '''
 # To store list of users
