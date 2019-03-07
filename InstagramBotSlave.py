@@ -76,6 +76,18 @@ def likePicture(webdriver, likes):
     button_like.click()
     likes += 1
 
+def commentPicture(webdriver, comments):
+    webdriver.find_element_by_xpath(
+        '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
+    comment_box = webdriver.find_element_by_xpath(
+        '/html/body/div[2]/div[2]/div/article/div[2]/section[3]/div/form/textarea')
+    rand_comment = random_comment()
+    comment_box.send_keys(rand_comment)
+    time.sleep(1)
+    comments += 1
+    comment_box.send_keys(Keys.ENTER)
+    time.sleep(random.randint(18, 28))
+
 
 # Creating a hashtag list to scratch instagram
 hashtag_list = config.hashtags
@@ -112,20 +124,8 @@ while(1):
                         time.sleep(random.randint(11, 25))
 
                         # Comments and tracker
-                        print('{}_{}'.format(hashtag, x))
-                        comments += 1
-                        webdriver.find_element_by_xpath(
-                            '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
-                        comment_box = webdriver.find_element_by_xpath(
-                            '/html/body/div[2]/div[2]/div/article/div[2]/section[3]/div/form/textarea')
-
-                        rand_comment = random_comment()
-                        comment_box.send_keys(rand_comment)
-                        time.sleep(1)
-                        # Enter to post comment
-                        comment_box.send_keys(Keys.ENTER)
-                        time.sleep(random.randint(22, 28))
-
+                        commentPicture(webdriver, comments)
+                        
                     # Next picture
                     webdriver.find_element_by_link_text('Next').click()
                     time.sleep(random.randint(25, 29))
