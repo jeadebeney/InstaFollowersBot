@@ -17,6 +17,10 @@ chrome_options = Options()
 chrome_options.add_argument("--disable-infobars")
 chrome_options.add_argument("disable-infobars")
 
+
+
+
+
 # Return a random comment from config file
 def random_comment():
     com_1 = random.choice(config.comments_adjectif)
@@ -27,12 +31,12 @@ def random_comment():
     print(final_com)
     return final_com
 
+
 # Create a webdriver instance
 def webdriverInstance():
     webdriver = wd.Chrome(executable_path=os.getenv(
     "CHROME_DRIVER_PATH"), options=chrome_options)
     return webdriver
-
 
 
 def webdriverConnect(webdriver):
@@ -57,11 +61,13 @@ def clickPicture(webdriver):
     first_thumbnail.click()
     time.sleep(random.randint(1, 3))
 
+
 # get Username when the browser displays a picture (full screen)
 def getUsername(webdriver):
     username = webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
     print("The username is {}".format(username))
     return username
+
 
 # new_followed is a list which tracks previous followed users and followed counts them
 def followUser(webdriver, username, new_followed, followed):
@@ -69,12 +75,15 @@ def followUser(webdriver, username, new_followed, followed):
     new_followed.append(username)
     followed += 1
 
+
 # likes count the number of likes given
 def likePicture(webdriver, likes):
     time.sleep(random.randint(1,3))
     button_like = webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[1]/button/span')
     button_like.click()
     likes += 1
+    time.sleep(random.randint(11, 25))
+
 
 def commentPicture(webdriver, comments):
     webdriver.find_element_by_xpath(
@@ -87,6 +96,10 @@ def commentPicture(webdriver, comments):
     comments += 1
     comment_box.send_keys(Keys.ENTER)
     time.sleep(random.randint(18, 28))
+
+def nextPicture(webdriver):
+    webdriver.find_element_by_link_text('Next').click()
+    time.sleep(random.randint(25, 29))
 
 
 # Creating a hashtag list to scratch instagram
@@ -108,7 +121,6 @@ while(1):
         tag = tag+1
         getTag(webdriver, hashtag_list, tag)
         clickPicture(webdriver)
-
         try:
             for x in range(1, 200):
                 username = getUsername(webdriver)
@@ -121,21 +133,17 @@ while(1):
 
                         # Liking the picture
                         likePicture(webdriver, likes)
-                        time.sleep(random.randint(11, 25))
+
 
                         # Comments and tracker
                         commentPicture(webdriver, comments)
                         
                     # Next picture
-                    webdriver.find_element_by_link_text('Next').click()
-                    time.sleep(random.randint(25, 29))
+                    nextPicture(webdriver)
                 else:
-                    webdriver.find_element_by_link_text('Next').click()
-                    time.sleep(random.randint(20, 26))
-
+                    nextPicture(webdriver)
         except:
             continue
-
 
 
 
