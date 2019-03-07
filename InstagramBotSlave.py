@@ -69,6 +69,13 @@ def followUser(webdriver, username, new_followed, followed):
     new_followed.append(username)
     followed += 1
 
+# likes count the number of likes given
+def likePicture(webdriver, likes):
+    time.sleep(random.randint(1,3))
+    button_like = webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[1]/button/span')
+    button_like.click()
+    likes += 1
+
 
 # Creating a hashtag list to scratch instagram
 hashtag_list = config.hashtags
@@ -101,12 +108,8 @@ while(1):
                             followUser(webdriver, username, new_followed, followed)
 
                         # Liking the picture
-                        button_like = webdriver.find_element_by_xpath(
-                            '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[1]/button/span')
-                        button_like.click()
-                        likes += 1
-
-                        time.sleep(random.randint(18, 25))
+                        likePicture(webdriver, likes)
+                        time.sleep(random.randint(11, 25))
 
                         # Comments and tracker
                         print('{}_{}'.format(hashtag, x))
