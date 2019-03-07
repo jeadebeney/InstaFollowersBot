@@ -10,7 +10,7 @@ import random
 # Pandas
 import pandas as pd
 # Selenium
-from selenium import webdriver
+from selenium import webdriver as wd
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 chrome_options = Options()
@@ -27,44 +27,36 @@ def random_comment():
     print(final_com)
     return final_com
 
-# Create a webdriver_insta instance
-
-
+# Create a webdriver instance
 def webdriverInstance():
-    webdriver_insta = webdriver.Chrome(executable_path=os.getenv(
+    webdriver = wd.Chrome(executable_path=os.getenv(
     "CHROME_DRIVER_PATH"), options=chrome_options)
-    return webdriver_insta
+    return webdriver
 
 
-webdriver_insta = webdriverInstance()
 
-webdriver_insta.get('https://www.instagram.com/accounts/login/')
-time.sleep(1)
-webdriver_insta.find_element_by_name('username').send_keys(os.getenv("PYI_IG_EMAIL"))
-webdriver_insta.find_element_by_name('password').send_keys(
+def webdriverConnect(webdriver):
+    webdriver.get('https://www.instagram.com/accounts/login/')
+    time.sleep(1)
+    webdriver.find_element_by_name('username').send_keys(os.getenv("PYI_IG_EMAIL"))
+    webdriver.find_element_by_name('password').send_keys(
     os.getenv("PYI_IG_PASSWORD"))
-webdriver_insta.find_element_by_xpath(
+    webdriver.find_element_by_xpath(
     '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[3]/button').send_keys(Keys.ENTER)
-#return webdriver_insta
-time.sleep(5)
+    return webdriver
 
 
-'''
-webdriver_insta = webdriver.Chrome(executable_path=os.getenv(
-    "CHROME_DRIVER_PATH"), options=chrome_options)
-webdriver_insta.get('https://www.instagram.com/accounts/login/')
-time.sleep(1)
-webdriver_insta.find_element_by_name('username').send_keys(os.getenv("PYI_IG_EMAIL"))
-webdriver_insta.find_element_by_name('password').send_keys(
-    os.getenv("PYI_IG_PASSWORD"))
-webdriver_insta.find_element_by_xpath(
-    '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[3]/button').send_keys(Keys.ENTER)
-
-time.sleep(5)
-'''
+def getTag(webdriver, hashtag_list, tag):
+    time.sleep(5)
+    webdriver.get('https://www.instagram.com/explore/tags/' + hashtag_list[tag] + '/')
+    print("hastag {} envoye".format(hashtag_list[tag]))
+    time.sleep(5)
 
 
-
+def clickPicture(webdriver):
+    first_thumbnail = webdriver.find_element_by_xpath('//*[@id="react-root"]/section/main/article/div[1]/div/div/div[1]/div[1]/a/div')
+    first_thumbnail.click()
+    time.sleep(random.randint(1, 3))
 
 # Creating a hashtag list to scratch instagram
 hashtag_list = config.hashtags
@@ -72,6 +64,8 @@ hashtag_list = config.hashtags
 # - if it's the first time you run it, use this line and comment the two below
 prev_user_list = []
 
+webdriver = webdriverInstance()
+webdriver = webdriverConnect(webdriver)
 
 while(1):
     new_followed = []
@@ -79,32 +73,30 @@ while(1):
     followed = 0
     likes = 0
     comments = 0
-
     for hashtag in hashtag_list:
-        tag = tag+1
-        webdriver_insta.get('https://www.instagram.com/explore/tags/' +
-                    hashtag_list[tag] + '/')
-        time.sleep(5)
-        first_thumbnail = webdriver_insta.find_element_by_xpath(
-            '//*[@id="react-root"]/section/main/article/div[1]/div/div/div[1]/div[1]/a/div')
 
-        first_thumbnail.click()
-        time.sleep(random.randint(1, 3))
+        tag = tag+1
+
+
+        getTag(webdriver, hashtag_list, tag)
+
+        clickPicture(webdriver)
+
         try:
             for x in range(1, 200):
-                username = webdriver_insta.find_element_by_xpath(
+                username = webdriver.find_element_by_xpath(
                     '/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
                 print("The username is {}".format(username))
 
                 if username not in prev_user_list:
-                    if webdriver_insta.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').text == 'Follow':
+                    if webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').text == 'Follow':
                         if random.randint(1,100) == 53:
-                            webdriver_insta.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').click()
+                            webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').click()
                             new_followed.append(username)
                             followed += 1
 
                         # Liking the picture
-                        button_like = webdriver_insta.find_element_by_xpath(
+                        button_like = webdriver.find_element_by_xpath(
                             '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[1]/button/span')
                         button_like.click()
                         likes += 1
@@ -114,9 +106,9 @@ while(1):
                         # Comments and tracker
                         print('{}_{}'.format(hashtag, x))
                         comments += 1
-                        webdriver_insta.find_element_by_xpath(
+                        webdriver.find_element_by_xpath(
                             '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
-                        comment_box = webdriver_insta.find_element_by_xpath(
+                        comment_box = webdriver.find_element_by_xpath(
                             '/html/body/div[2]/div[2]/div/article/div[2]/section[3]/div/form/textarea')
 
                         rand_comment = random_comment()
@@ -127,10 +119,10 @@ while(1):
                         time.sleep(random.randint(22, 28))
 
                     # Next picture
-                    webdriver_insta.find_element_by_link_text('Next').click()
+                    webdriver.find_element_by_link_text('Next').click()
                     time.sleep(random.randint(25, 29))
                 else:
-                    webdriver_insta.find_element_by_link_text('Next').click()
+                    webdriver.find_element_by_link_text('Next').click()
                     time.sleep(random.randint(20, 26))
 
         except:
