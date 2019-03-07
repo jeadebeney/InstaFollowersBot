@@ -1,15 +1,11 @@
 # Environment variables
 from dotenv import load_dotenv
 load_dotenv()
-# Config
 import config
-# Defaults
 import os
 import time
 import random
-# Pandas
 import pandas as pd
-# Selenium
 from selenium import webdriver as wd
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
@@ -148,24 +144,8 @@ def commentLoop(hashtag_list):
                 continue
                     
 
+
 '''
-# To store list of users
-# prev_user_list = pd.read_csv('20181203-224633_users_followed_list.csv', delimiter=',').iloc[:,1:2] # useful to build a user log
-# prev_user_list = list(prev_user_list['0'])
-
-
-# TODO: Comment
-for n in range(0, len(new_followed)):
-    prev_user_list.append(new_followed[n])
-
-updated_user_df = pd.DataFrame(prev_user_list)
-updated_user_df.to_csv('{}_users_followed_list.csv'.format(
-    time.strftime("%Y%m%d-%H%M%S")))
-print('Liked {} photos.'.format(likes))
-print('Commented {} photos.'.format(comments))
-print('Followed {} new people.'.format(followed))
-
-
 # TODO: snake case in python
 def unfollow_with_username(self, username):
     self.browser.get('https://www.instagram.com/' + username + '/')
@@ -179,11 +159,5 @@ def unfollow_with_username(self, username):
         confirmButton.click()
     else:
         print("You are not following this user")
-
-
-# Wait approximatively the requested amount of time
-def random_sleep(seconds):
-    time.sleep(seconds + random.randint(10, 1000) / 1000)
-
-
 '''
+
