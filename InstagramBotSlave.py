@@ -43,7 +43,6 @@ def webdriverConnect(webdriver):
     os.getenv("PYI_IG_PASSWORD"))
     webdriver.find_element_by_xpath(
     '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[3]/button').send_keys(Keys.ENTER)
-    return webdriver
 
 
 def getTag(webdriver, hashtag_list, tag):
@@ -58,6 +57,19 @@ def clickPicture(webdriver):
     first_thumbnail.click()
     time.sleep(random.randint(1, 3))
 
+# get Username when the browser displays a picture (full screen)
+def getUsername(webdriver):
+    username = webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
+    print("The username is {}".format(username))
+    return username
+
+# new_followed is a list which tracks previous followed users and followed counts them
+def followUser(webdriver, username, new_followed, followed):
+    webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').click()
+    new_followed.append(username)
+    followed += 1
+
+
 # Creating a hashtag list to scratch instagram
 hashtag_list = config.hashtags
 
@@ -65,7 +77,7 @@ hashtag_list = config.hashtags
 prev_user_list = []
 
 webdriver = webdriverInstance()
-webdriver = webdriverConnect(webdriver)
+webdriverConnect(webdriver)
 
 while(1):
     new_followed = []
@@ -74,26 +86,19 @@ while(1):
     likes = 0
     comments = 0
     for hashtag in hashtag_list:
-
         tag = tag+1
-
-
         getTag(webdriver, hashtag_list, tag)
-
         clickPicture(webdriver)
 
         try:
             for x in range(1, 200):
-                username = webdriver.find_element_by_xpath(
-                    '/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
-                print("The username is {}".format(username))
+                username = getUsername(webdriver)
 
                 if username not in prev_user_list:
                     if webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').text == 'Follow':
+                        # We randomly follow users (odds: 1/100 so far)
                         if random.randint(1,100) == 53:
-                            webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').click()
-                            new_followed.append(username)
-                            followed += 1
+                            followUser(webdriver, username, new_followed, followed)
 
                         # Liking the picture
                         button_like = webdriver.find_element_by_xpath(
