@@ -62,9 +62,14 @@ def clickPicture(webdriver):
 # get Username when the browser displays a picture (full screen)
 def getUsername(webdriver):
     username = webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
-    print("The username is {}".format(username))
+    #print("The username is {}".format(username))
     return username
 
+# get number of likes in the current picture we are looking at
+
+def getNumberLikes(webdriver):
+    numberLikes =  webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/div[2]/section[2]/div/div/button/span').text   
+    return numberLikes
 
 # new_followed is a list which tracks previous followed users and followed counts them
 def followUser(webdriver, username, new_followed, followed):
@@ -110,6 +115,9 @@ def commentLoop(hashtag_list):
     followed = 0
     likes = 0
     comments = 0
+    columns = ['ID_user', 'Nb_likes', 'Time_update', 'Hashtag', 'Comment']
+    tracking_tab = pd.DataFrame(columns = columns)
+
     while(1):
         for hashtag in hashtag_list:
             tag = tag+1
@@ -131,6 +139,9 @@ def commentLoop(hashtag_list):
                         # Comments and tracker
                         comments = commentPicture(webdriver, comments)
                         
+                        # Keeping track of the user info
+
+
                     if likes % 50 == 0:
                         print("The number of likes is: {}.".format(likes))
                     if comments % 50 == 0:
