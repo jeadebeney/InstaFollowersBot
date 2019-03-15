@@ -5,7 +5,7 @@ import config
 import os
 import time
 import random
-import pandas as pd
+import numpy as np
 from selenium import webdriver as wd
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
@@ -25,7 +25,7 @@ def random_comment():
     com_4 = random.choice(config.comments_ponctuation)
     final_com = com_1 + " " + com_2 + " " + com_3+ com_4
     print(final_com)
-    return final_com
+    return [final_com, com_1, com_2, com_3]
 
 
 # Create a webdriver instance
@@ -100,13 +100,14 @@ def commentPicture(webdriver, comments):
         '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
     comment_box = webdriver.find_element_by_xpath(
         '/html/body/div[2]/div[2]/div/article/div[2]/section[3]/div/form/textarea')
-    rand_comment = random_comment()
+    rand_comment_list = random_comment()
+    rand_comment = rand_comment_list[0]
     comment_box.send_keys(rand_comment)
     time.sleep(1)
     comments += 1
     comment_box.send_keys(Keys.ENTER)
     time.sleep(random.randint(18, 28))
-    return comments
+    return rand_comment_list,  comments
 
 
 def nextPicture(webdriver):
@@ -121,9 +122,8 @@ def commentLoop(hashtag_list):
     tag = -1 
     followed = 0
     likes = 0
-    comments = 0
-    columns = ['ID_user', 'Nb_likes', 'Time_update', 'Hashtag', 'Comment']
-    tracking_tab = pd.DataFrame(columns = columns)
+    num_comment = 0
+    tracking_tab = np.array(['ID_user', 'Nb_likes', 'Hashtag', 'Com_part_1', 'Com_part_2', 'Com_part_3'])
 
     while(1):
         for hashtag in hashtag_list:
@@ -144,15 +144,21 @@ def commentLoop(hashtag_list):
                         likes = likePicture(webdriver, likes)
 
                         # Comments and tracker
-                        comments = commentPicture(webdriver, comments)
+                        comment, num_comment = commentPicture(webdriver, num_comment)
                         
                         # Keeping track of the user info
-
+                        likes_picture = getNumberLikes(webdriver)
+                        com_1 = comment[1]
+                        com_2 = comment[2]
+                        com_3 = comment[3]
+                        info_picture = np.array([username,likes_picture,hashtag,com_1,com_2,com_3])
+                        tracking_tab = np.vstack((tracking_tab, info_picture))
+                        print(tracking_tab)
 
                     if likes % 50 == 0:
                         print("The number of likes is: {}.".format(likes))
-                    if comments % 50 == 0:
-                        print("The number of comments is: {}.".format(comments))
+                    if num_comment % 50 == 0:
+                        print("The number of comments is: {}.".format(num_comment))
 
                     # Next picture
                     nextPicture(webdriver)
