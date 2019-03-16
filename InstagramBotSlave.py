@@ -24,7 +24,6 @@ def random_comment():
     com_3 = random.choice(config.comments_smiley)
     com_4 = random.choice(config.comments_ponctuation)
     final_com = com_1 + " " + com_2 + " " + com_3+ com_4
-    print(final_com)
     return [final_com, com_1, com_2, com_3]
 
 
@@ -49,7 +48,7 @@ def webdriverConnect(webdriver):
 def getTag(webdriver, hashtag_list, tag):
     time.sleep(5)
     webdriver.get('https://www.instagram.com/explore/tags/' + hashtag_list[tag] + '/')
-    print("hastag {} envoye".format(hashtag_list[tag]))
+    #print("hastag {} envoye".format(hashtag_list[tag]))
     time.sleep(5)
 
 
@@ -123,8 +122,13 @@ def commentLoop(hashtag_list, export_path):
     followed = 0
     likes = 0
     num_comment = 0
-    tracking_tab = np.array(['ID_user', 'Nb_likes', 'Hashtag', 'Com_part_1', 'Com_part_2', 'Com_part_3'])
 
+    try:
+        tracking_tab = np.genfromtxt(export_path, delimiter=',', dtype = 'str')
+    except:
+        tracking_tab = np.array(['ID_user', 'Nb_likes', 'Hashtag', 'Com_part_1', 'Com_part_2', 'Com_part_3'])
+    
+    #tracking_tab = np.array(['ID_user', 'Nb_likes', 'Hashtag', 'Com_part_1', 'Com_part_2', 'Com_part_3'])
     while(1):
         for hashtag in hashtag_list:
             tag = tag+1
