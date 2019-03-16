@@ -115,7 +115,7 @@ def nextPicture(webdriver):
     time.sleep(random.randint(25, 29))
 
 
-def commentLoop(hashtag_list):
+def commentLoop(hashtag_list, export_path):
     webdriver = webdriverInstance()
     webdriverConnect(webdriver)
     new_followed = []
@@ -154,6 +154,7 @@ def commentLoop(hashtag_list):
                         info_picture = np.array([username,likes_picture,hashtag,com_1,com_2,com_3])
                         tracking_tab = np.vstack((tracking_tab, info_picture))
                         print(tracking_tab)
+                        np.savetxt(export_path, tracking_tab, delimiter = ",", fmt='%s')
 
                     if likes % 50 == 0:
                         print("The number of likes is: {}.".format(likes))
@@ -162,7 +163,6 @@ def commentLoop(hashtag_list):
 
                     # Next picture
                     nextPicture(webdriver)
-
 
             except:
                 continue

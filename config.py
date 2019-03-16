@@ -6,19 +6,6 @@ hashtags_3 = ['travelers','traveling','travelholic','travelbug','travelgram','tr
 
 hashtags_4 = ['wonderfulplaces','roamtheplanet','travellifestyle','solotravels','solotraveldiaries','nomadiclife','clouds','night','beautifulnature','riverside']
 
-
-comments_adjectif = ['Nice', 'Cool', 'Really cool', 'Awesome', 'Admirable', 'Beautiful', 'Breathtaking', 'Impressive', 'Wonderful', 
-'What a', 'Incredible', 'Very cool', 'This is a really nice', 'I love this', 'What a nice', 'What a cool', 'Splendid', 'Gorgeous', 'Charming',
-'Fascinating']
-
-comments_photo = ['photo', 'pic', 'photography', 'visual', 'snapshot', 'shot', 'image', 'portrait', 'capture']
-
-comments_smiley = [':-)', ':)',';)', ';-)',':)','','','','','','']
-
-comments_ponctuation = ['!','!!', '', '!','!','!!','','','','','','']
-
-
-
 hashtags_5 =["love", "instagood", "photooftheday", "fashion", "beautiful", "happy", "cute", "tbt", "like4like", "followme", "picoftheday", "follow", "me", "selfie", "summer", 
 "art", "instadaily" "life", "beauty", "amazing", "instamood", "instagram", "goodmorning", "iphoneonly"]
 
@@ -33,3 +20,19 @@ hashtags_8 = ["night", "tflers", "yummy", "flowers", "lifestyle", "hot", "instaf
 
 hashtags_9 = ["photography", "vscocam", "sun", "photo", "music", "beach", "followforfollow", "bestoftheday", 
 "sky", "ootd", "sunset", "healthy", "holiday", "christmas", "nyc", "london", "sea", "instacool"]
+
+comments_adjectif = ['Nice', 'Cool', 'Really cool', 'Awesome', 'Admirable', 'Beautiful', 'Breathtaking', 'Impressive', 'Wonderful', 
+'What a', 'Incredible', 'Very cool', 'This is a really nice', 'I love this', 'What a nice', 'What a cool', 'Splendid', 'Gorgeous', 'Charming',
+'Fascinating']
+
+comments_photo = ['photo', 'pic', 'photography', 'visual', 'snapshot', 'shot', 'image', 'portrait', 'capture']
+
+comments_smiley = [':-)', ':)',';)', ';-)',':)','','','','','','']
+
+comments_ponctuation = ['!','!!', '', '!','!','!!','','','','','','']
+
+
+export_path_1 = 'C:\\Users\\jean.debeney\\Documents\Perso_J\\Instagram\\Track1.csv'
+export_path_2 = 'C:\\Users\\jean.debeney\\Documents\Perso_J\\Instagram\\Track2.csv'
+export_path_3 = 'C:\\Users\\jean.debeney\\Documents\Perso_J\\Instagram\\Track3.csv'
+export_path_4 = 'C:\\Users\\jean.debeney\\Documents\Perso_J\\Instagram\\Track4.csv'
