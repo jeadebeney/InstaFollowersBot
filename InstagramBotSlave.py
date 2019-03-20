@@ -165,10 +165,6 @@ def commentLoop(hashtag_list, export_path):
                             track_writer = csv.writer(tracking_file, delimiter = ',')
                             track_writer.writerow(info_picture)
 
-                        tracking_tab = np.vstack((tracking_tab, info_picture))
-                        print(tracking_tab)
-                        np.savetxt(export_path, tracking_tab, delimiter = ",", fmt='%s')
-
                     if likes % 50 == 0:
                         print("The number of likes is: {}.".format(likes))
                     if num_comment % 50 == 0:
