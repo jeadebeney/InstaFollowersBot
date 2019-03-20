@@ -9,6 +9,7 @@ import numpy as np
 from selenium import webdriver as wd
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
+import csv
 chrome_options = Options()
 chrome_options.add_argument("--disable-infobars")
 chrome_options.add_argument("disable-infobars")
@@ -123,11 +124,14 @@ def commentLoop(hashtag_list, export_path):
     likes = 0
     num_comment = 0
 
-    try:
-        tracking_tab = np.genfromtxt(export_path, delimiter=',', dtype = 'str')
-    except:
-        tracking_tab = np.array(['ID_user', 'Nb_likes', 'Hashtag', 'Com_part_1', 'Com_part_2', 'Com_part_3'])
-    
+    # create a csv file if does not exist yet
+    if os.path.isfile(export_path) == False:
+        tracking_header = ['ID_user', 'Nb_likes', 'Hashtag', 'Com_part_1', 'Com_part_2', 'Com_part_3']
+        with open(export_path, mode = 'w') as header:
+            header_writer = csv.writer(header, delimiter = ',')
+            header_writer.writerow(tracking_header)
+
+
     #tracking_tab = np.array(['ID_user', 'Nb_likes', 'Hashtag', 'Com_part_1', 'Com_part_2', 'Com_part_3'])
     while(1):
         for hashtag in hashtag_list:
@@ -155,7 +159,12 @@ def commentLoop(hashtag_list, export_path):
                         com_1 = comment[1]
                         com_2 = comment[2]
                         com_3 = comment[3]
-                        info_picture = np.array([username,likes_picture,hashtag,com_1,com_2,com_3])
+                        info_picture = [username,likes_picture,hashtag,com_1,com_2,com_3]
+
+                        with open(export_path, mode = 'a') as tracking_file:
+                            track_writer = csv.writer(tracking_file, delimiter = ',')
+                            track_writer.writerow(info_picture)
+
                         tracking_tab = np.vstack((tracking_tab, info_picture))
                         print(tracking_tab)
                         np.savetxt(export_path, tracking_tab, delimiter = ",", fmt='%s')
