@@ -32,13 +32,13 @@ def random_comment():
 def webdriverInstance():
     webdriver = wd.Chrome(executable_path=os.getenv(
     "CHROME_DRIVER_PATH"), options=chrome_options)
-    time.sleep(2)
+    time.sleep(random.randint(1,4))
     return webdriver
 
 
 def webdriverConnect(webdriver):
     webdriver.get('https://www.instagram.com/accounts/login/')
-    time.sleep(3)
+    time.sleep(random.randint(2,4))
     webdriver.find_element_by_name('username').send_keys(os.getenv("PYI_IG_EMAIL"))
     webdriver.find_element_by_name('password').send_keys(
     os.getenv("PYI_IG_PASSWORD"))
@@ -47,10 +47,10 @@ def webdriverConnect(webdriver):
 
 
 def getTag(webdriver, hashtag_list, tag):
-    time.sleep(5)
+    time.sleep(random.randint(3,6))
     webdriver.get('https://www.instagram.com/explore/tags/' + hashtag_list[tag] + '/')
     #print("hastag {} envoye".format(hashtag_list[tag]))
-    time.sleep(5)
+    time.sleep(random.randint(3,6))
 
 
 def clickPicture(webdriver):
@@ -95,24 +95,27 @@ def likePicture(webdriver, likes):
     return likes
 
 
-def commentPicture(webdriver, comments):
+def commentPicture(webdriver, num_comments, username):
     webdriver.find_element_by_xpath(
         '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
     comment_box = webdriver.find_element_by_xpath(
         '/html/body/div[2]/div[2]/div/article/div[2]/section[3]/div/form/textarea')
     rand_comment_list = random_comment()
     rand_comment = rand_comment_list[0]
+    #add randomly the username at the beginning of the comment
+    if random.randint(1,3) == 1:
+        rand_comment = '@' + username + ' '+ rand_comment
     comment_box.send_keys(rand_comment)
-    time.sleep(1)
-    comments += 1
+    time.sleep(random.randint(1,3))
+    num_comments += 1
     comment_box.send_keys(Keys.ENTER)
     time.sleep(random.randint(18, 28))
-    return rand_comment_list,  comments
+    return rand_comment_list,  num_comments
 
 
 def nextPicture(webdriver):
     webdriver.find_element_by_link_text('Next').click()
-    time.sleep(random.randint(25, 29))
+    time.sleep(random.randint(20, 29))
 
 
 def commentLoop(hashtag_list, export_path):
@@ -131,8 +134,6 @@ def commentLoop(hashtag_list, export_path):
             header_writer = csv.writer(header, delimiter = ',')
             header_writer.writerow(tracking_header)
 
-
-    #tracking_tab = np.array(['ID_user', 'Nb_likes', 'Hashtag', 'Com_part_1', 'Com_part_2', 'Com_part_3'])
     while(1):
         for hashtag in hashtag_list:
             tag = tag+1
@@ -152,7 +153,7 @@ def commentLoop(hashtag_list, export_path):
                         likes = likePicture(webdriver, likes)
 
                         # Comments and tracker
-                        comment, num_comment = commentPicture(webdriver, num_comment)
+                        comment, num_comment = commentPicture(webdriver, num_comment, username)
                         
                         # Keeping track of the user info
                         likes_picture = getNumberLikes(webdriver)
@@ -193,4 +194,13 @@ def unfollow_with_username(self, username):
     else:
         print("You are not following this user")
 '''
+
+#todo : relevance of instagram queries
+#todo : add username at the end of the comment
+
+# snake idea : if number_likes < 50 then follow + track the number of followers
+# little script that unfollow 5 days after : user lists from insta tools from instagram  
+# helper tools for instagram proxy
+# function that returns list of people to unfollow 
+# function that unfollows those users
 

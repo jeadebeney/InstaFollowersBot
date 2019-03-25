@@ -32,7 +32,7 @@ comments_smiley = [':-)', ':)',';)', ';-)',':)','','','','','','']
 comments_ponctuation = ['!','!!', '', '!','!','!!','','','','','','']
 
 
-export_path_1 = 'C:\\Users\\jean.debeney\\Documents\Perso_J\\Instagram\\Track1.csv'
-export_path_2 = 'C:\\Users\\jean.debeney\\Documents\Perso_J\\Instagram\\Track2.csv'
-export_path_3 = 'C:\\Users\\jean.debeney\\Documents\Perso_J\\Instagram\\Track3.csv'
-export_path_4 = 'C:\\Users\\jean.debeney\\Documents\Perso_J\\Instagram\\Track4.csv'
+export_path_1 = 'C:\\Users\\jean.debeney\\OneDrive - Ekimetrics\\Documents\\Perso_J\Instagram\\Track1.csv'
+export_path_2 = 'C:\\Users\\jean.debeney\\OneDrive - Ekimetrics\\Documents\\Perso_J\Instagram\\Track2.csv'
+export_path_3 = 'C:\\Users\\jean.debeney\\OneDrive - Ekimetrics\\Documents\\Perso_J\Instagram\\Track3.csv'
+export_path_4 = 'C:\\Users\\jean.debeney\\OneDrive - Ekimetrics\\Documents\\Perso_J\Instagram\\Track4.csv'
