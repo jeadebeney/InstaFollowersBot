@@ -19,13 +19,13 @@ t4 = threading.Thread(target = commentLoop, args = (config.hashtags_4,config.exp
 
 # Launching 4 different threads
 t1.start()
-
+'''
 time.sleep(15)
 t2.start()
 time.sleep(15)
 t3.start()
 time.sleep(15)
 t4.start()
-
+'''
 
 

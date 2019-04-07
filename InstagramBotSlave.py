@@ -43,7 +43,7 @@ def webdriverConnect(webdriver):
     webdriver.find_element_by_name('password').send_keys(
     os.getenv("PYI_IG_PASSWORD"))
     webdriver.find_element_by_xpath(
-    '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[3]/button').send_keys(Keys.ENTER)
+    '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[4]/button').send_keys(Keys.ENTER)
 
 
 def getTag(webdriver, hashtag_list, tag):
@@ -61,14 +61,14 @@ def clickPicture(webdriver):
 
 # get Username when the browser displays a picture (full screen)
 def getUsername(webdriver):
-    username = webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
+    username = webdriver.find_element_by_xpath('/html/body/div[3]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
     #print("The username is {}".format(username))
     return username
 
 
 # get number of likes in the current picture we are looking at
 def getNumberLikes(webdriver):
-    numberLikes =  webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/div[2]/section[2]/div/div/button/span').text   
+    numberLikes =  webdriver.find_element_by_xpath('/html/body/div[3]/div[2]/div/article/div[2]/section[2]/div/div/button/span').text   
     return numberLikes
 
 
@@ -80,7 +80,7 @@ def getTime(webdriver):
 
 # new_followed is a list which tracks previous followed users and followed counts them
 def followUser(webdriver, username, new_followed, followed):
-    webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').click()
+    webdriver.find_element_by_xpath('/html/body/div[3]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').click()
     new_followed.append(username)
     followed += 1
 
@@ -88,7 +88,7 @@ def followUser(webdriver, username, new_followed, followed):
 # likes count the number of likes given
 def likePicture(webdriver, likes):
     time.sleep(random.randint(1,3))
-    button_like = webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[1]/button/span')
+    button_like = webdriver.find_element_by_xpath('/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[1]/button/span')
     button_like.click()
     likes += 1
     time.sleep(random.randint(11, 25))
@@ -97,9 +97,9 @@ def likePicture(webdriver, likes):
 
 def commentPicture(webdriver, num_comments, username):
     webdriver.find_element_by_xpath(
-        '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
+        '/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
     comment_box = webdriver.find_element_by_xpath(
-        '/html/body/div[2]/div[2]/div/article/div[2]/section[3]/div/form/textarea')
+        '/html/body/div[3]/div[2]/div/article/div[2]/section[3]/div/form/textarea')
     rand_comment_list = random_comment()
     rand_comment = rand_comment_list[0]
     #add randomly the username at the beginning of the comment
@@ -142,29 +142,27 @@ def commentLoop(hashtag_list, export_path):
             try:
                 for x in range(1, 200):
                     username = getUsername(webdriver)
+    
+                    # We randomly follow users (odds: 1/100 so far)
+                    if random.randint(1,100) == 53:
+                        followUser(webdriver, username, new_followed, followed)
 
-                    if webdriver.find_element_by_xpath('/html/body/div[2]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').text == 'Follow':
-                        
-                        # We randomly follow users (odds: 1/100 so far)
-                        if random.randint(1,100) == 53:
-                            followUser(webdriver, username, new_followed, followed)
+                    # Liking the picture
+                    likes = likePicture(webdriver, likes)
 
-                        # Liking the picture
-                        likes = likePicture(webdriver, likes)
+                    # Comments and tracker
+                    comment, num_comment = commentPicture(webdriver, num_comment, username)
+                    
+                    # Keeping track of the user info
+                    likes_picture = getNumberLikes(webdriver)
+                    com_1 = comment[1]
+                    com_2 = comment[2]
+                    com_3 = comment[3]
+                    info_picture = [username,likes_picture,hashtag,com_1,com_2,com_3]
 
-                        # Comments and tracker
-                        comment, num_comment = commentPicture(webdriver, num_comment, username)
-                        
-                        # Keeping track of the user info
-                        likes_picture = getNumberLikes(webdriver)
-                        com_1 = comment[1]
-                        com_2 = comment[2]
-                        com_3 = comment[3]
-                        info_picture = [username,likes_picture,hashtag,com_1,com_2,com_3]
-
-                        with open(export_path, mode = 'a') as tracking_file:
-                            track_writer = csv.writer(tracking_file, delimiter = ',')
-                            track_writer.writerow(info_picture)
+                    with open(export_path, mode = 'a') as tracking_file:
+                        track_writer = csv.writer(tracking_file, delimiter = ',')
+                        track_writer.writerow(info_picture)
 
                     if likes % 50 == 0:
                         print("The number of likes is: {}.".format(likes))
