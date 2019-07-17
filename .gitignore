@@ -3,3 +3,4 @@ virtualenv/
 chromedriver
 __pycache__/
 .vscode/
+exports/

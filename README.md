@@ -1,20 +1,41 @@
-# What the bot does
-- You give 4 lists of hashtags as parameters, example: my_hashtags_list = ["beach", "sun", "nature", "mountain"]
-- You enter your IG credentials in the .env file
-- The robot opens a window on your chrome browser and logs into your IG account.
-- Then, it searches in the research bar the first hashtag of the first list of hashtags you gave as a parameter, here "beach". 
-- For each one of the 200 first pictures that are displayed, it leaves a like to the picture, and display a comment. There are 1500+ combinations of different comments, and time out of three, it leaves in the comment the username of the picture. Once the bot left commments one the 200 pictures, it does the same for the second hashtag ("sun") etc. When it reaches the end of the hashtags list, it restarts from the beginning of the list. 
-- The bot does this operation 4 times in parallel. This is why you have to give 4 lists of hashtags
+# What the bot does :
+Given a list of hashtags, this bot will like and comment the first 200 pictures found for each one.
+There are over 1500 different comment combinations, which you can extend in the `config.py` file.
 
+The bot can run in multiple concurrent threads : also set up in `config.py` file.
 
-# How to use the bot
-- Use virtualenv to create your python3 wrapper environment (please call it `virtualenv`, or make sure it is git ignored)
-- Run `pip install -r requirements.txt` to install dependencies
-- Download your platform's chrome driver (https://chromedriver.storage.googleapis.com/index.html?path=73.0.3683.20/) and save it in your projects directory as `chromedriver`
-- Create a `.env` file and add the following environment variables:
+An export summary will be created for each instance in the `/exports` directory.
+
+# How to use :
+- Use [virtualenv](https://virtualenv.pypa.io/en/latest/) to create your Python 3 wrapper environment (please call it `virtualenv`, or make sure it is git ignored).
+- Install dependencies : `pip install -r requirements.txt`
+- Download your corresponding chromedriver [here](http://chromedriver.chromium.org/downloads) and save it in your root project's root directory as `chromedriver`. To check your current Chrome version, go [here](https://www.whatismybrowser.com/detect/what-version-of-chrome-do-i-have).
+- Create the following `.env` file and your your instagram credentials :
 ```
 PYI_IG_EMAIL=...
 PYI_IG_PASSWORD=...
 CHROME_DRIVER_PATH=./chromedriver
 ```
-- launch the bot with `python run.py`
+- Run the bot : `python run.py`
+
+# Configuration : `config.py`
+Add as many slaves as you want: 
+```
+SLAVES = [
+    {
+        'name': 'slave_name', # used to name the export file
+        'hashtags': ['hashtag_1', 'hashtag_2', 'hashtag_3'],
+    },
+    ...
+]
+```
+Create your custom comments by populating the different `comments` fields :
+```
+COMMENTS = {
+    'adjectives': ['Nice', 'Cool', ...],
+    'photos': ['photo', 'pic', ...],
+    'smileys': [':-)', ':)', ...],
+    'ponctuation': ['!', '!!', ...]
+}
+
+```
