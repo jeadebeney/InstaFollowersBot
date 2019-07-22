@@ -12,9 +12,10 @@ from config import CHROME_DRIVER_PATH
 import traceback
 import logging
 
+
 class Slave(threading.Thread):
 
-    def __init__(self, ig_login, ig_password, comments, hashtags, export_path):
+    def __init__(self, ig_login, ig_password, comments, hashtags, export_dir):
         super(Slave, self).__init__()
         self._logger = logging.getLogger(f'{__name__}-{ig_login}')
         self._logger.debug("__init__")
@@ -22,22 +23,21 @@ class Slave(threading.Thread):
         self._hashtags = deque(hashtags)
         self._ig_login = ig_login
         self._ig_password = ig_password
-        self._export_path = export_path
+        self._export_path = f'{export_dir}/{ig_login}.csv'
         self._new_followed = []
         self._num_comments = 0
         self._likes = 0
-        
 
         self._init_webdriver()
         self._ig_connect()
-        self._init_export()
+        self._init_export(export_dir)
         # launch thread
         self.start()
 
     def _follow_user(self, username):
         ''' Follow user sometimes '''
-        if random.randint(1, 100) == 53:  # todo wtf
-            self._logger.debug(f"followign user {username}")
+        if random.randint(1, 100) == 1:
+            self._logger.debug(f"following user {username}")
             self._webdriver.find_element_by_xpath(
                 '/html/body/div[3]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').click()
             self._new_followed.append(username)
@@ -55,10 +55,12 @@ class Slave(threading.Thread):
                 for _ in range(200):
                     username = self._get_current_picture_username()
                     self._follow_user(username)
+                    self.random_sleep()
                     self._like_picture()
                     self.random_sleep()
                     self._comment_picture(username)
-                    tracking_data = [username, self._get_picture_likes(), hashtag]
+                    tracking_data = [hashtag, username,
+                                     self._get_picture_likes()]
                     self._update_export_file(tracking_data)
 
                     # Next picture
@@ -106,12 +108,14 @@ class Slave(threading.Thread):
         self._webdriver.find_element_by_xpath(
             '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[4]/button').send_keys(Keys.ENTER)
 
-    def _init_export(self):
+    def _init_export(self, export_dir):
         ''' Init export dir and file if needed '''
+        # Create required directories
+        if not os.path.exists(export_dir):
+            os.makedirs(export_dir)
         # create a csv file if does not exist yet
         if os.path.isfile(self._export_path) == False:
-            tracking_header = ['ID_user', 'Nb_likes', 'Hashtag',
-                               'Com_part_1', 'Com_part_2', 'Com_part_3']
+            tracking_header = ['hashtag', 'username', 'nb_likes']
             with open(self._export_path, mode='w') as header:
                 header_writer = csv.writer(header, delimiter=',')
                 header_writer.writerow(tracking_header)
@@ -134,7 +138,7 @@ class Slave(threading.Thread):
         self._logger.debug(f"getting current picture username")
         try:
             username = self._webdriver.find_element_by_xpath(
-            '/html/body/div[3]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
+                '/html/body/div[3]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
         except:
             username = None
         self._logger.debug(f"found {username}")
@@ -183,4 +187,4 @@ class Slave(threading.Thread):
         self._webdriver.find_element_by_link_text('Next').click()
 
     def random_sleep(self):
-        time.sleep(random.randint(2, 5))
+        time.sleep(random.randint(3, 6))
