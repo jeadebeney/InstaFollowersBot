@@ -1,210 +1,186 @@
 # Environment variables
+import threading
 import csv
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium import webdriver as wd
-import numpy as np
 import random
 import time
 import os
-from config import COMMENTS
-from dotenv import load_dotenv
-load_dotenv()
-chrome_options = Options()
-chrome_options.add_argument("--disable-infobars")
-chrome_options.add_argument("disable-infobars")
+from collections import deque
+from config import CHROME_DRIVER_PATH
+import traceback
+import logging
 
+class Slave(threading.Thread):
 
-# Return a random comment from config file
-def random_comment():
-    com_1 = random.choice(COMMENTS['adjectives'])
-    com_2 = random.choice(COMMENTS['photos'])
-    com_3 = random.choice(COMMENTS['smileys'])
-    com_4 = random.choice(COMMENTS['ponctuation'])
-    final_com = com_1 + " " + com_2 + " " + com_3 + com_4
-    return [final_com, com_1, com_2, com_3]
+    def __init__(self, ig_login, ig_password, comments, hashtags, export_path):
+        super(Slave, self).__init__()
+        self._logger = logging.getLogger(f'{__name__}-{ig_login}')
+        self._logger.debug("__init__")
+        self._comments = comments
+        self._hashtags = deque(hashtags)
+        self._ig_login = ig_login
+        self._ig_password = ig_password
+        self._export_path = export_path
+        self._new_followed = []
+        self._num_comments = 0
+        self._likes = 0
+        
 
+        self._init_webdriver()
+        self._ig_connect()
+        self._init_export()
+        # launch thread
+        self.start()
 
-# Create a webdriver instance
-def webdriverInstance():
-    webdriver = wd.Chrome(executable_path=os.getenv(
-        "CHROME_DRIVER_PATH"), options=chrome_options)
-    time.sleep(random.randint(1, 4))
-    return webdriver
+    def _follow_user(self, username):
+        ''' Follow user sometimes '''
+        if random.randint(1, 100) == 53:  # todo wtf
+            self._logger.debug(f"followign user {username}")
+            self._webdriver.find_element_by_xpath(
+                '/html/body/div[3]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').click()
+            self._new_followed.append(username)
 
-
-def webdriverConnect(webdriver):
-    webdriver.get('https://www.instagram.com/accounts/login/')
-    time.sleep(random.randint(2, 4))
-    webdriver.find_element_by_name(
-        'username').send_keys(os.getenv("PYI_IG_EMAIL"))
-    webdriver.find_element_by_name('password').send_keys(
-        os.getenv("PYI_IG_PASSWORD"))
-    webdriver.find_element_by_xpath(
-        '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[4]/button').send_keys(Keys.ENTER)
-
-
-def getTag(webdriver, hashtag_list, tag):
-    time.sleep(random.randint(3, 6))
-    webdriver.get('https://www.instagram.com/explore/tags/' +
-                  hashtag_list[tag] + '/')
-    #print("hastag {} envoye".format(hashtag_list[tag]))
-    time.sleep(random.randint(3, 6))
-
-
-def clickPicture(webdriver):
-    first_thumbnail = webdriver.find_element_by_xpath(
-        '//*[@id="react-root"]/section/main/article/div[1]/div/div/div[1]/div[1]/a/div')
-    first_thumbnail.click()
-    time.sleep(random.randint(1, 3))
-
-
-# get Username when the browser displays a picture (full screen)
-def getUsername(webdriver):
-    username = webdriver.find_element_by_xpath(
-        '/html/body/div[3]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
-    #print("The username is {}".format(username))
-    return username
-
-
-# get number of likes in the current picture we are looking at
-def getNumberLikes(webdriver):
-    numberLikes = webdriver.find_element_by_xpath(
-        '/html/body/div[3]/div[2]/div/article/div[2]/section[2]/div/div/button/span').text
-    return numberLikes
-
-
-# get the time picture was posted
-def getTime(webdriver):
-    timePosted = webdriver.find_element_by_xpath(
-        '/html/body/div[2]/div[2]/div/article/div[2]/div[2]/a/time'.text)
-    return timePosted
-
-
-# new_followed is a list which tracks previous followed users and followed counts them
-def followUser(webdriver, username, new_followed, followed):
-    webdriver.find_element_by_xpath(
-        '/html/body/div[3]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').click()
-    new_followed.append(username)
-    followed += 1
-
-
-# likes count the number of likes given
-def likePicture(webdriver, likes):
-    time.sleep(random.randint(1, 3))
-    button_like = webdriver.find_element_by_xpath(
-        '/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[1]/button/span')
-    button_like.click()
-    likes += 1
-    time.sleep(random.randint(11, 25))
-    return likes
-
-
-def commentPicture(webdriver, num_comments, username):
-    webdriver.find_element_by_xpath(
-        '/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
-    comment_box = webdriver.find_element_by_xpath(
-        '/html/body/div[3]/div[2]/div/article/div[2]/section[3]/div/form/textarea')
-    rand_comment_list = random_comment()
-    rand_comment = rand_comment_list[0]
-    # add randomly the username at the beginning of the comment
-    if random.randint(1, 3) == 1:
-        rand_comment = '@' + username + ' ' + rand_comment
-    comment_box.send_keys(rand_comment)
-    time.sleep(random.randint(1, 3))
-    num_comments += 1
-    comment_box.send_keys(Keys.ENTER)
-    time.sleep(random.randint(18, 28))
-    return rand_comment_list,  num_comments
-
-
-def nextPicture(webdriver):
-    webdriver.find_element_by_link_text('Next').click()
-    time.sleep(random.randint(20, 29))
-
-
-def commentLoop(hashtag_list, export_path):
-    webdriver = webdriverInstance()
-    webdriverConnect(webdriver)
-    new_followed = []
-    tag = -1
-    followed = 0
-    likes = 0
-    num_comment = 0
-
-    # create a csv file if does not exist yet
-    if os.path.isfile(export_path) == False:
-        tracking_header = ['ID_user', 'Nb_likes', 'Hashtag',
-                           'Com_part_1', 'Com_part_2', 'Com_part_3']
-        with open(export_path, mode='w') as header:
-            header_writer = csv.writer(header, delimiter=',')
-            header_writer.writerow(tracking_header)
-
-    while(1):
-        for hashtag in hashtag_list:
-            tag = tag+1
-            getTag(webdriver, hashtag_list, tag)
-            clickPicture(webdriver)
+    def run(self):
+        while self._hashtags:
+            hashtag = self._hashtags.popleft()
+            self._logger.debug(f"current hashtag: {hashtag}")
+            self.random_sleep()
+            self._search_hashtag(hashtag)
+            self.random_sleep()
+            self._click_picture()
+            self.random_sleep()
             try:
-                for x in range(1, 200):
-                    username = getUsername(webdriver)
-
-                    # We randomly follow users (odds: 1/100 so far)
-                    if random.randint(1, 100) == 53:
-                        followUser(webdriver, username, new_followed, followed)
-
-                    # Liking the picture
-                    likes = likePicture(webdriver, likes)
-
-                    # Comments and tracker
-                    comment, num_comment = commentPicture(
-                        webdriver, num_comment, username)
-
-                    # Keeping track of the user info
-                    likes_picture = getNumberLikes(webdriver)
-                    com_1 = comment[1]
-                    com_2 = comment[2]
-                    com_3 = comment[3]
-                    info_picture = [username, likes_picture,
-                                    hashtag, com_1, com_2, com_3]
-
-                    with open(export_path, mode='a') as tracking_file:
-                        track_writer = csv.writer(tracking_file, delimiter=',')
-                        track_writer.writerow(info_picture)
-
-                    if likes % 50 == 0:
-                        print("The number of likes is: {}.".format(likes))
-                    if num_comment % 50 == 0:
-                        print("The number of comments is: {}.".format(num_comment))
+                for _ in range(200):
+                    username = self._get_current_picture_username()
+                    self._follow_user(username)
+                    self._like_picture()
+                    self.random_sleep()
+                    self._comment_picture(username)
+                    tracking_data = [username, self._get_picture_likes(), hashtag]
+                    self._update_export_file(tracking_data)
 
                     # Next picture
-                    nextPicture(webdriver)
+                    self._next_picture()
+                    self.random_sleep()
 
-            except:
+            except Exception:
+                print("Something went wrong.")
+                print(traceback.print_exc())
                 continue
 
+    def _update_export_file(self, data):
+        ''' Append new row to export file '''
+        self._logger.debug(f"update export file: {data}")
+        with open(self._export_path, mode='a') as tracking_file:
+            track_writer = csv.writer(tracking_file, delimiter=',')
+            track_writer.writerow(data)
 
-'''
-# TODO: snake case in python
-def unfollow_with_username(self, username):
-    self.browser.get('https://www.instagram.com/' + username + '/')
-    time.sleep(2)
-    follow_btn = self.browser.find_element_by_css_selector('button')
-    if (follow_btn.text == 'Following'):
-        follow_btn.click()
-        time.sleep(2)
-        confirmButton = self.browser.find_element_by_xpath(
-            '//button[text() = "Unfollow"]')
-        confirmButton.click()
-    else:
-        print("You are not following this user")
-'''
+    def _random_comment(self):
+        ''' Return random comment '''
+        return random.choice(self._comments)
 
-# todo : relevance of instagram queries
-# todo : add username at the end of the comment
+    # Create a webdriver instance
 
-# snake idea : if number_likes < 50 then follow + track the number of followers
-# little script that unfollow 5 days after : user lists from insta tools from instagram
-# helper tools for instagram proxy
-# function that returns list of people to unfollow
-# function that unfollows those users
+    def _init_webdriver(self):
+        ''' Init selenium chrome instance '''
+        chrome_options = Options()
+        chrome_options.add_argument("--disable-infobars")
+        chrome_options.add_argument("disable-infobars")
+
+        from selenium.webdriver.remote.remote_connection import LOGGER
+        LOGGER.setLevel(logging.WARNING)
+        self._webdriver = wd.Chrome(
+            executable_path=CHROME_DRIVER_PATH, options=chrome_options)
+        self.random_sleep()
+
+    def _ig_connect(self):
+        ''' Login to instagram '''
+        self._webdriver.get('https://www.instagram.com/accounts/login/')
+        self.random_sleep()
+        self._webdriver.find_element_by_name(
+            'username').send_keys(self._ig_login)
+        self._webdriver.find_element_by_name(
+            'password').send_keys(self._ig_password)
+        self._webdriver.find_element_by_xpath(
+            '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[4]/button').send_keys(Keys.ENTER)
+
+    def _init_export(self):
+        ''' Init export dir and file if needed '''
+        # create a csv file if does not exist yet
+        if os.path.isfile(self._export_path) == False:
+            tracking_header = ['ID_user', 'Nb_likes', 'Hashtag',
+                               'Com_part_1', 'Com_part_2', 'Com_part_3']
+            with open(self._export_path, mode='w') as header:
+                header_writer = csv.writer(header, delimiter=',')
+                header_writer.writerow(tracking_header)
+
+    def _search_hashtag(self, hashtag):
+        ''' Search hashtag in ig '''
+        self._logger.debug(f"searching hashtag {hashtag}")
+        self._webdriver.get(
+            f'https://www.instagram.com/explore/tags/{hashtag}/')
+
+    def _click_picture(self):
+        ''' Click on picture thumbnail '''
+        self._logger.debug(f"click picture")
+        first_thumbnail = self._webdriver.find_element_by_xpath(
+            '//*[@id="react-root"]/section/main/article/div[1]/div/div/div[1]/div[1]/a/div')
+        first_thumbnail.click()
+
+    def _get_current_picture_username(self):
+        ''' Get current picture owner's username '''
+        self._logger.debug(f"getting current picture username")
+        try:
+            username = self._webdriver.find_element_by_xpath(
+            '/html/body/div[3]/div[2]/div/article/header/div[2]/div[1]/div[1]/h2/a').text
+        except:
+            username = None
+        self._logger.debug(f"found {username}")
+        return username
+
+    def _get_picture_likes(self):
+        ''' Get current picutre's number of likes '''
+        self._logger.debug(f"getting current picture like count")
+        nb_likes = self._webdriver.find_element_by_xpath(
+            '/html/body/div[3]/div[2]/div/article/div[2]/section[2]/div/div/button/span').text
+        self._logger.debug(f"found {nb_likes}")
+        return nb_likes
+
+    def _like_picture(self):
+        ''' Like picture '''
+        self._logger.debug(f"liking current picture")
+        button_like = self._webdriver.find_element_by_xpath(
+            '/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[1]/button/span')
+        button_like.click()
+        self._likes += 1
+
+    def _comment_picture(self, username):
+        ''' Comment picture '''
+        self._logger.debug(f"commenting current picture")
+        self._num_comments += 1
+        self._webdriver.find_element_by_xpath(
+            '/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
+        comment = self._random_comment()
+
+        # add username to comment
+        if random.randint(1, 3) == 1 and username:
+            comment = f'@{username} {comment}'
+        self._logger.debug(f"comment {comment}")
+        # get comment box
+        comment_box = self._webdriver.find_element_by_xpath(
+            '/html/body/div[3]/div[2]/div/article/div[2]/section[3]/div/form/textarea')
+        comment_box.send_keys(comment)
+        self.random_sleep()
+        # send comment
+        comment_box.send_keys(Keys.ENTER)
+        self.random_sleep()
+
+    def _next_picture(self):
+        ''' Go to next picutre '''
+        self._logger.debug(f"next picutre")
+        self._webdriver.find_element_by_link_text('Next').click()
+
+    def random_sleep(self):
+        time.sleep(random.randint(2, 5))

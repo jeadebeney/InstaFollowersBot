@@ -1,6 +1,7 @@
 virtualenv/
-.env
 chromedriver
 __pycache__/
 .vscode/
 exports/
+config.py
+**.log
