@@ -35,49 +35,38 @@ class Slave(multiprocessing.Process):
 
     def run(self):
         while self._hashtags:
-
-            try:
-                hashtag = self._hashtags.pop()
-                self._logger.info(f"current hashtag: {hashtag}")
-                self.random_sleep()
-                self._search_hashtag(hashtag)
-                self.random_sleep()
-                self._click_picture()
-                self.random_sleep()
-            except Exception:
-                print("Something went wrong.")
-                print(traceback.print_exc())
-                continue
+            hashtag = self._hashtags.pop()
+            self._logger.info(f"current hashtag: {hashtag}")
+            self._search_hashtag(hashtag)
+            self.random_sleep()
+            self._click_picture()
+            self.random_sleep()
 
             for _ in range(200):
-                try:
-                    username = self._get_current_picture_username()
-                    self._follow_user(username)
-                    self.random_sleep()
-                    liked = self._like_picture()
-                    # self.random_sleep()
-                    # comment and add tracking data only if picture liked - if not, it means the picture was already liked and tracked before
-                    if liked:
-                        comment = None
-                        if len(self._comments) > 0:
-                            comment = self._comment_picture(username)
-                        tracking_data = [hashtag, username,
-                                         self._get_picture_likes(), comment]
-                        self._update_export_file(tracking_data)
-                    # Next picture
-                    self._next_picture()
-                    self.random_sleep()
+                # reset variables
+                username = comment = None
+                liked = False
 
+                username = self._get_current_picture_username()
+                try:
+                    self._follow_user(username)
+                    liked = self._like_picture()
+                    if liked:
+                        comment = self._comment_picture(username)
                 except Exception:
-                    print("Something went wrong.")
-                    print(traceback.print_exc())
-                    # automatically restart driver instance if blocked by instagram
-                    if self._is_ig_blocked():
-                        self._logger.warn(f"rebooting driver instance")
-                        self._close_driver()
-                        self._init_driver()
-                        self._ig_connect()
+                    if self._ig_blocked():
+                        self._reboot()
                         break
+                    print(traceback.print_exc())
+
+                # update export data only if picture liked - if not, it means the picture was already liked and tracked before
+                if liked:
+                    nb_likes = self._get_picture_likes()
+                    tracking_data = [hashtag, username, nb_likes, comment]
+                    self._update_export_file(tracking_data)
+                # Next picture
+                self._next_picture()
+                time.sleep(1)
 
     def _init_driver(self):
         ''' Init selenium chrome instance '''
@@ -91,9 +80,12 @@ class Slave(multiprocessing.Process):
             executable_path=CHROME_DRIVER_PATH, options=chrome_options)
         time.sleep(2)
 
-    def _close_driver(self):
-        ''' Close all selenium windows gracefully '''
+    def _reboot(self):
+        ''' Close and reboot webdriver instance to bypass ig blocking '''
+        self._logger.info("rebooting")
         self._driver.quit()
+        self._init_driver()
+        self._ig_connect()
 
     def _init_export(self, export_dir):
         ''' Init export dir and file if needed '''
@@ -102,7 +94,8 @@ class Slave(multiprocessing.Process):
             os.makedirs(export_dir)
         # create a csv file if does not exist yet
         if os.path.isfile(self._export_path) == False:
-            tracking_header = ['time', 'hashtag', 'username', 'nb_likes', 'comment']
+            tracking_header = ['time', 'hashtag',
+                               'username', 'nb_likes', 'comment']
             with open(self._export_path, mode='w') as header:
                 header_writer = csv.writer(header, delimiter=',')
                 header_writer.writerow(tracking_header)
@@ -126,6 +119,9 @@ class Slave(multiprocessing.Process):
             self._driver.find_element_by_xpath(
                 '/html/body/div[3]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').click()
             self._followed_users.append(username)
+            self.random_sleep()
+            return True
+        return False
 
     def _ig_connect(self):
         ''' Login to instagram '''
@@ -136,8 +132,12 @@ class Slave(multiprocessing.Process):
         self._driver.find_element_by_name(
             'password').send_keys(self._ig_password)
         time.sleep(0.1)
-        self._driver.find_element_by_xpath(
-            '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[4]/button').send_keys(Keys.ENTER)
+        login_btn = self._find_element(['//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[4]/button',
+                                        '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[6]/button'])
+
+        login_btn.send_keys(Keys.ENTER)
+
+        time.sleep(2)  # process time
 
     def _search_hashtag(self, hashtag):
         ''' Search hashtag in ig '''
@@ -180,32 +180,32 @@ class Slave(multiprocessing.Process):
     def _like_picture(self):
         ''' Like picture only if not already liked '''
         # Multiple xpaths exist for the heart like icon - try unitl you find the correct one
-        xpaths = ['/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[1]/button/span', '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[1]/button/span']
-        button_like = None
-        for xp in xpaths:
-            try:
-                button_like = self._driver.find_element_by_xpath(xp)
-                if button_like is not None:
-                    break
-            except:
-                pass
-             
-        like_classes = button_like.get_attribute("class")
+        btn_like = self._find_element(['/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[1]/button/span',
+                                       '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[1]/button/span',
+                                       '/html/body/div[4]/div[2]/div/article/div[2]/section[1]/span[1]/button/span'])
+
+        like_classes = btn_like.get_attribute("class")
         if 'filled' not in like_classes:  # look if heart is filled = already liked
             self._logger.info(f"liking current picture - no previous like")
-            button_like.click()
+            btn_like.click()
             self._likes += 1
+            self.random_sleep()
             return True
         else:
             self._logger.info(f"current picture already liked - skipping")
             return False
 
     def _comment_picture(self, username):
-        ''' Comment picture '''
+        ''' Comment picture if available comments '''
+
+        if len(self._comments) == 0:
+            return
+
         self._logger.info(f"commenting current picture")
         self._nb_comments += 1
-        self._driver.find_element_by_xpath(
-            '/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
+        # what is this ?
+        # self._driver.find_element_by_xpath(
+        #     '/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
         comment = self._random_comment()
 
         # add username to comment
@@ -234,7 +234,7 @@ class Slave(multiprocessing.Process):
         self._logger.info(f"sleeping {sleep_time}s")
         time.sleep(sleep_time)
 
-    def _is_ig_blocked(self):
+    def _ig_blocked(self):
         ''' Check if current action is blocked by ig, sleep 10 minutes and try again if it is the case '''
         el = self._driver.find_elements_by_xpath(
             "//*[contains(text(), 'Action Blocked')]")
@@ -247,3 +247,12 @@ class Slave(multiprocessing.Process):
 
         # Click on 'Action Blocked' pop-up 'Try again' option
         # self._driver.find_element_by_xpath('/html/body/div[4]/div/div/div[2]/button[2]').click()
+
+    def _find_element(self, xpaths):
+        for xp in xpaths:
+            try:
+                element = self._driver.find_element_by_xpath(xp)
+                if element is not None:
+                    return element
+            except:
+                raise Exception("Couldn't find any xpaths from list.")
