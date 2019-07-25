@@ -3,12 +3,13 @@ import multiprocessing
 import csv
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.wait import WebDriverWait
 from selenium import webdriver as wd
 import random
+from random import shuffle
 import time
 import os
 from collections import deque
-from config import CHROME_DRIVER_PATH
 import traceback
 import logging
 import datetime
@@ -18,29 +19,31 @@ class Slave(multiprocessing.Process):
 
     def __init__(self, ig_login, ig_password, comments, hashtags, export_dir):
         super(Slave, self).__init__()
-        self._logger = logging.getLogger(f'{__name__}-{ig_login}')
+        self._logger = logging.getLogger(f'{ig_login}')
         self._logger.info("__init__")
         self._comments = comments
+        shuffle(hashtags) # shuffle hashtags
         self._hashtags = deque(hashtags)
         self._ig_login = ig_login
         self._ig_password = ig_password
         self._export_path = f'{export_dir}/{ig_login}.csv'
+        self._init_export(export_dir)
         self._followed_users = []
         self._nb_comments = 0
         self._likes = 0
 
-        self._init_export(export_dir)
+    def run(self):
+
         self._init_driver()
         self._ig_connect()
 
-    def run(self):
         while self._hashtags:
             hashtag = self._hashtags.pop()
             self._logger.info(f"current hashtag: {hashtag}")
+            time.sleep(1)
             self._search_hashtag(hashtag)
-            self.random_sleep()
             self._click_picture()
-            self.random_sleep()
+            time.sleep(3)
 
             for _ in range(200):
                 # reset variables
@@ -53,11 +56,12 @@ class Slave(multiprocessing.Process):
                     liked = self._like_picture()
                     if liked:
                         comment = self._comment_picture(username)
-                except Exception:
-                    if self._ig_blocked():
-                        self._reboot()
-                        break
-                    print(traceback.print_exc())
+                except Exception as e:
+                    # if self._ig_blocked():
+                    #     self._reboot()
+                    #     break
+                    raise e
+                    # print(traceback.print_exc())
 
                 # update export data only if picture liked - if not, it means the picture was already liked and tracked before
                 if liked:
@@ -66,7 +70,6 @@ class Slave(multiprocessing.Process):
                     self._update_export_file(tracking_data)
                 # Next picture
                 self._next_picture()
-                time.sleep(1)
 
     def _init_driver(self):
         ''' Init selenium chrome instance '''
@@ -77,7 +80,7 @@ class Slave(multiprocessing.Process):
         from selenium.webdriver.remote.remote_connection import LOGGER
         LOGGER.setLevel(logging.WARNING)
         self._driver = wd.Chrome(
-            executable_path=CHROME_DRIVER_PATH, options=chrome_options)
+            executable_path='./chromedriver', options=chrome_options)
         time.sleep(2)
 
     def _reboot(self):
@@ -125,6 +128,7 @@ class Slave(multiprocessing.Process):
 
     def _ig_connect(self):
         ''' Login to instagram '''
+        self._logger.info(f"logging in as {self._ig_login}")
         self._driver.get('https://www.instagram.com/accounts/login/')
         time.sleep(3)
         self._driver.find_element_by_name(
@@ -132,18 +136,21 @@ class Slave(multiprocessing.Process):
         self._driver.find_element_by_name(
             'password').send_keys(self._ig_password)
         time.sleep(0.1)
-        login_btn = self._find_element(['//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[4]/button',
-                                        '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[6]/button'])
 
+        login_btn = self._find_element(['//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[4]/button',
+                                        '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[6]/button', ])
         login_btn.send_keys(Keys.ENTER)
 
-        time.sleep(2)  # process time
+        time.sleep(3)  # process time
 
     def _search_hashtag(self, hashtag):
         ''' Search hashtag in ig '''
         self._logger.info(f"searching hashtag: {hashtag}")
         self._driver.get(
             f'https://www.instagram.com/explore/tags/{hashtag}/')
+        WebDriverWait(self._driver, 10).until(
+            lambda x: x.find_element_by_xpath('//*[@id="react-root"]/section/main/article'))
+        # //*[@id = "react-root"]/section/main/div/div[3]/article'
 
     def _click_picture(self):
         ''' Click on picture thumbnail '''
@@ -182,7 +189,8 @@ class Slave(multiprocessing.Process):
         # Multiple xpaths exist for the heart like icon - try unitl you find the correct one
         btn_like = self._find_element(['/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[1]/button/span',
                                        '/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[1]/button/span',
-                                       '/html/body/div[4]/div[2]/div/article/div[2]/section[1]/span[1]/button/span'])
+                                       '/html/body/div[4]/div[2]/div/article/div[2]/section[1]/span[1]/button/span',
+                                       ])
 
         like_classes = btn_like.get_attribute("class")
         if 'filled' not in like_classes:  # look if heart is filled = already liked
@@ -203,22 +211,23 @@ class Slave(multiprocessing.Process):
 
         self._logger.info(f"commenting current picture")
         self._nb_comments += 1
-        # what is this ?
-        # self._driver.find_element_by_xpath(
-        #     '/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
-        comment = self._random_comment()
 
+        comment = self._random_comment()
         # add username to comment
         if random.randint(1, 3) == 1 and username:
             comment = f'@{username} {comment}'
         self._logger.info(f"comment {comment}")
-        # get comment box
+        # focus comment box
+        self._driver.find_element_by_xpath(
+            '/html/body/div[3]/div[2]/div/article/div[2]/section[1]/span[2]/button/span').click()
+        # get comment box and add comment
         comment_box = self._driver.find_element_by_xpath(
-            '/html/body/div[3]/div[2]/div/article/div[2]/section[3]/div/form/textarea')
+            "//textarea[@aria-label='Add a comment…']")
+        time.sleep(0.2)
         comment_box.send_keys(comment)
-        self.random_sleep()
+        time.sleep(1)
         # send comment
-        comment_box.send_keys(Keys.ENTER)
+        comment_box.submit()
         self.random_sleep()
         return comment
 
@@ -226,6 +235,9 @@ class Slave(multiprocessing.Process):
         ''' Go to next picutre '''
         self._logger.info(f"next picutre")
         self._driver.find_element_by_link_text('Next').click()
+        # wait for picture to be loaded
+        WebDriverWait(self._driver, 10).until(
+            lambda x: x.find_element_by_xpath("//textarea[@aria-label='Add a comment…']"))
         # /html/body/div[3]/div[1]/div/div/a[2]
 
     def random_sleep(self):
