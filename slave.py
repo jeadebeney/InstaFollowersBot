@@ -22,7 +22,7 @@ class Slave(multiprocessing.Process):
         self._logger = logging.getLogger(f'{ig_login}')
         self._logger.info("__init__")
         self._comments = comments
-        shuffle(hashtags) # shuffle hashtags
+        shuffle(hashtags)  # shuffle hashtags
         self._hashtags = deque(hashtags)
         self._ig_login = ig_login
         self._ig_password = ig_password
@@ -236,8 +236,11 @@ class Slave(multiprocessing.Process):
         self._logger.info(f"next picutre")
         self._driver.find_element_by_link_text('Next').click()
         # wait for picture to be loaded
-        WebDriverWait(self._driver, 10).until(
-            lambda x: x.find_element_by_xpath("//textarea[@aria-label='Add a comment…']"))
+        try:
+            WebDriverWait(self._driver, 10).until(
+                lambda x: x.find_element_by_xpath("//textarea[@aria-label='Add a comment…']"))
+        except:
+            self._next_picture()
         # /html/body/div[3]/div[1]/div/div/a[2]
 
     def random_sleep(self):
