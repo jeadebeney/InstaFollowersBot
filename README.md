@@ -9,7 +9,8 @@ An export summary will be created for each instance in the `/exports` directory.
 - Install dependencies : `pip install -r requirements.txt`
 - Download your corresponding chromedriver [here](http://chromedriver.chromium.org/downloads) and save it in your root project's root directory as `chromedriver`. To check your current Chrome version, go [here](https://www.whatismybrowser.com/detect/what-version-of-chrome-do-i-have).
 - Configure the `config.py` file.
-- Run the bot : `python run.py`
+- Run the bot with the command line : `python run.py`
+- On mac, you can also double-click the `run.command` script to launch the bot.
 
 # Configuration : `config.py`
 Add as many slaves as you want: 

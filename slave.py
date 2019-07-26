@@ -6,23 +6,23 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium import webdriver as wd
 import random
-from random import shuffle
 import time
 import os
 from collections import deque
-import traceback
 import logging
 import datetime
 
 
 class Slave(multiprocessing.Process):
 
+    __slots__ = '_driver', '_export_path', '_logger',  '_ig_login', '_ig_password', '_comments', '_hashtags', '_followed_users', '_nb_comments', '_likes'
+
     def __init__(self, ig_login, ig_password, comments, hashtags, export_dir):
         super(Slave, self).__init__()
         self._logger = logging.getLogger(f'{ig_login}')
         self._logger.info("__init__")
         self._comments = comments
-        shuffle(hashtags)  # shuffle hashtags
+        random.shuffle(hashtags)  # shuffle hashtags to not always start with the same order
         self._hashtags = deque(hashtags)
         self._ig_login = ig_login
         self._ig_password = ig_password
@@ -31,16 +31,13 @@ class Slave(multiprocessing.Process):
         self._followed_users = []
         self._nb_comments = 0
         self._likes = 0
+        self._driver = None
 
     def run(self):
-
-        self._init_driver()
-        self._ig_connect()
+        self._reboot()
 
         while self._hashtags:
             hashtag = self._hashtags.pop()
-            self._logger.info(f"current hashtag: {hashtag}")
-            time.sleep(1)
             self._search_hashtag(hashtag)
             self._click_picture()
             time.sleep(3)
@@ -57,11 +54,10 @@ class Slave(multiprocessing.Process):
                     if liked:
                         comment = self._comment_picture(username)
                 except Exception as e:
-                    # if self._ig_blocked():
-                    #     self._reboot()
-                    #     break
+                    if self._ig_blocked():
+                        self._reboot()
+                        break
                     raise e
-                    # print(traceback.print_exc())
 
                 # update export data only if picture liked - if not, it means the picture was already liked and tracked before
                 if liked:
@@ -85,8 +81,11 @@ class Slave(multiprocessing.Process):
 
     def _reboot(self):
         ''' Close and reboot webdriver instance to bypass ig blocking '''
+
         self._logger.info("rebooting")
-        self._driver.quit()
+        if self._driver:
+            self._driver.quit()
+            self._driver = None
         self._init_driver()
         self._ig_connect()
 
@@ -140,8 +139,9 @@ class Slave(multiprocessing.Process):
         login_btn = self._find_element(['//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[4]/button',
                                         '//*[@id="react-root"]/section/main/div/article/div/div[1]/div/form/div[6]/button', ])
         login_btn.send_keys(Keys.ENTER)
-
-        time.sleep(3)  # process time
+        time.sleep(0.5)
+        WebDriverWait(self._driver, 10).until(
+            lambda x: self._driver.find_element_by_link_text(self._ig_login))
 
     def _search_hashtag(self, hashtag):
         ''' Search hashtag in ig '''
@@ -150,7 +150,6 @@ class Slave(multiprocessing.Process):
             f'https://www.instagram.com/explore/tags/{hashtag}/')
         WebDriverWait(self._driver, 10).until(
             lambda x: x.find_element_by_xpath('//*[@id="react-root"]/section/main/article'))
-        # //*[@id = "react-root"]/section/main/div/div[3]/article'
 
     def _click_picture(self):
         ''' Click on picture thumbnail '''
