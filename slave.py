@@ -11,33 +11,41 @@ import os
 from collections import deque
 import logging
 import datetime
+from tracker import Tracker
+import signal
+import sys
 
 
 class Slave(multiprocessing.Process):
 
-    __slots__ = '_driver', '_export_path', '_logger',  '_ig_login', '_ig_password', '_comments', '_hashtags', '_followed_users', '_nb_comments', '_likes'
+    __slots__ = '_driver', '_tracker', '_logger',  '_ig_login', '_ig_password', '_comments', '_hashtags', '_visited_posts', '_followed_users', '_comments_posted', '_liked_posts', '_blocked_count'
 
     def __init__(self, ig_login, ig_password, comments, hashtags, export_dir):
         super(Slave, self).__init__()
         self._logger = logging.getLogger(f'{ig_login}')
         self._logger.info("__init__")
         self._comments = comments
-        random.shuffle(hashtags)  # shuffle hashtags to not always start with the same order
+        # shuffle hashtags to not always start with the same order
+        random.shuffle(hashtags)
         self._hashtags = deque(hashtags)
         self._ig_login = ig_login
         self._ig_password = ig_password
-        self._export_path = f'{export_dir}/{ig_login}.csv'
-        self._init_export(export_dir)
+        self._tracker = Tracker(f'{export_dir}/{ig_login}.csv')
         self._followed_users = []
-        self._nb_comments = 0
-        self._likes = 0
+        self._comments_posted = []
+        self._visited_posts = []
+        self._liked_posts = []
+        self._blocked_count = 0
         self._driver = None
+        # Handle ctrl+C exit signal to print summary
+        signal.signal(signal.SIGINT, self._signal_handler)
 
     def run(self):
         self._reboot()
 
         while self._hashtags:
             hashtag = self._hashtags.pop()
+            self._tracker.track('hashtag', hashtag)
             self._search_hashtag(hashtag)
             self._click_picture()
             time.sleep(3)
@@ -46,26 +54,24 @@ class Slave(multiprocessing.Process):
                 # reset variables
                 username = comment = None
                 liked = False
-
+                self._tracker.track('picture', self._driver.current_url)
+                self._visited_posts.append(self._driver.current_url)
                 username = self._get_current_picture_username()
                 try:
                     self._follow_user(username)
                     liked = self._like_picture()
                     if liked:
                         comment = self._comment_picture(username)
+
+                    # Next picture
+                    self._next_picture()
                 except Exception as e:
                     if self._ig_blocked():
+                        self._blocked_count += 1
+                        self._tracker.track('blocked')
                         self._reboot()
                         break
                     raise e
-
-                # update export data only if picture liked - if not, it means the picture was already liked and tracked before
-                if liked:
-                    nb_likes = self._get_picture_likes()
-                    tracking_data = [hashtag, username, nb_likes, comment]
-                    self._update_export_file(tracking_data)
-                # Next picture
-                self._next_picture()
 
     def _init_driver(self):
         ''' Init selenium chrome instance '''
@@ -89,27 +95,6 @@ class Slave(multiprocessing.Process):
         self._init_driver()
         self._ig_connect()
 
-    def _init_export(self, export_dir):
-        ''' Init export dir and file if needed '''
-        # Create required directories
-        if not os.path.exists(export_dir):
-            os.makedirs(export_dir)
-        # create a csv file if does not exist yet
-        if os.path.isfile(self._export_path) == False:
-            tracking_header = ['time', 'hashtag',
-                               'username', 'nb_likes', 'comment']
-            with open(self._export_path, mode='w') as header:
-                header_writer = csv.writer(header, delimiter=',')
-                header_writer.writerow(tracking_header)
-
-    def _update_export_file(self, data):
-        ''' Append new row to export file '''
-        self._logger.info(f"update export file: {data}")
-        now = datetime.datetime.now()
-        with open(self._export_path, mode='a') as tracking_file:
-            track_writer = csv.writer(tracking_file, delimiter=',')
-            track_writer.writerow([now] + data)
-
     def _random_comment(self):
         ''' Return random comment '''
         return random.choice(self._comments)
@@ -122,6 +107,7 @@ class Slave(multiprocessing.Process):
                 '/html/body/div[3]/div[2]/div/article/header/div[2]/div[1]/div[2]/button').click()
             self._followed_users.append(username)
             self.random_sleep()
+            self._tracker.track('follow', username)
             return True
         return False
 
@@ -195,7 +181,10 @@ class Slave(multiprocessing.Process):
         if 'filled' not in like_classes:  # look if heart is filled = already liked
             self._logger.info(f"liking current picture - no previous like")
             btn_like.click()
-            self._likes += 1
+            
+            current_post_url = self._driver.current_url
+            self._liked_posts.append(current_post_url)
+            self._tracker.track('like', current_post_url)
             self.random_sleep()
             return True
         else:
@@ -209,7 +198,6 @@ class Slave(multiprocessing.Process):
             return
 
         self._logger.info(f"commenting current picture")
-        self._nb_comments += 1
 
         comment = self._random_comment()
         # add username to comment
@@ -228,11 +216,13 @@ class Slave(multiprocessing.Process):
         # send comment
         comment_box.submit()
         self.random_sleep()
+        self._comments_posted.append(comment)
+        self._tracker.track('comment', comment)
         return comment
 
     def _next_picture(self):
         ''' Go to next picutre '''
-        self._logger.info(f"next picutre")
+        self._logger.info(f"next picture")
         self._driver.find_element_by_link_text('Next').click()
         # wait for picture to be loaded
         try:
@@ -270,3 +260,14 @@ class Slave(multiprocessing.Process):
                     return element
             except:
                 raise Exception("Couldn't find any xpaths from list.")
+
+    def _signal_handler(self, sig, frame):
+        ''' Print summary when CTRL+C termination '''
+        self._logger.info(f'''{self._ig_login}:
+                 \t{len(self._visited_posts)} posts visited
+                 \t{len(self._comments_posted)} comments posted
+                 \t{len(self._followed_users)} users followed
+                 \t{len(self._liked_posts)} posts liked
+                 \t{self._blocked_count} ig blocks
+                 ''')
+        sys.exit(0)
